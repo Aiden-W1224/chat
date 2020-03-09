@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; width: 90% }
+      #displayUsers {text-align: right; font-weight: bold; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style>
+  </head>
+  <body>
+    <p id="displayUsers">Online Users</p>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        $(function () {
+            var socket = io();
+            $('form').submit(function(e){
+            e.preventDefault(); // prevents page reloading
+            socket.emit('chat message', {id: socket.id, msg: $('#m').val()});
+            $('#m').val('');
+            return false;
+            });
+            socket.on('chat message', function(data){
+                $('#messages').append($.parseHTML(`<li><span>${new Date().getHours()}:${new Date().getMinutes()}</span><span style="color: ${data.color};">${data.user}: </span>${data.msg}</li>`))
+            });
+            socket.on('displayOnline', function(data){
+                //$('#displayUsers').empty();
+                for (var i = 0; i < data.onlineUsers.length; i++){
+                    $('#displayUsers').append($.parseHTML(`<li>${data.onlineUsers[i].user}</li>`))
+                }
+            });
+            socket.on('historyMsg', function(data){
+                $('#messages').empty();
+                for (var i=0; i < data.hist.length; i++){
+                    $('#messages').append($.parseHTML(`<li><span>${new Date().getHours()}:${new Date().getMinutes()}</span><span style="color: ${data.hist[i].color};">${data.hist[i].user}: </span>${data.hist[i].msg}</li>`))
+                }
+            });
+            socket.on('connect', function(data){
+                socket.emit('im-here',{id:socket.id})
+            });
+        });
+    </script>
+  </body>
+</html>
+
